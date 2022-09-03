@@ -1,0 +1,34 @@
+body{
+    padding: 0;
+    margin: 0;
+    position: relative;
+}
+
+.ekran1 {
+    position: absolute;
+}
+
+.video {
+    position: absolute;
+    
+    top: 10%;
+    width: 100%;
+}
+
+.kapatma {
+    position: absolute;
+    top: 10%;
+}
+
+.ekran2 {
+    position: absolute;
+    left: 15%;
+}
+
+.ekran3
+ {
+    position: absolute;
+    /* left: 30%; */
+}
+
+

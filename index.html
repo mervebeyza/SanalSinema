@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sinema</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="js/style.css">
+    <link href="C:\xampp\htdocs">
+</head>
+
+<body>
+    <!-- Butonlar -->
+    <div style="width:100%;height: 30px;" class="ekran1">
+        <input type="button" name="button" id="baslatekran1" class="ekran1" style="display: none;" 
+        value="Başlat
+   Ekran 1" >
+        <input type="button" name="button" id="baslatekran2" class="ekran2" style="display: none;"
+        value="Başlat
+  Ekran 2" >
+        <input type="button" name="button" id="baslatekran3" class="ekran3" style="display: none;"
+        value="
+Başlat  
+    " >
+    </div>
+    <input type="button"  id="kapat" class="kapatma" style="display: none;"  value="Kapat" >
+    
+    <!-- Videolar -->
+    <video id="video" style="display:none"  >
+		<source src="/video/movie.mp4" >
+    </video>
+
+    <video id="video1" style="display:none" > 
+        <source src="/video/movie.mp4" >
+    </video>
+
+    <video id="video2" style="display:none" > 
+        <source src="/video/movie.mp4" >
+    </video>
+
+    <script type="module">
+      
+        import * as THREE from 'https://cdn.skypack.dev/three@0.129.0/build/three.module.js';
+        import { VRButton } from 'https://unpkg.com/three/examples/jsm/webxr/VRButton.js';
+        import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.129.0/examples/jsm/loaders/GLTFLoader.js'; 
+
+        var scene, camera, renderer, render, clock, controls;
+        var mixers = [];
+        var actions = [];
+        var armature, sitting2, sittostand, sittingp, standing;
+        var actionYurume, actionOturma2, actionOturma4, actionOturma3, actionPufKalkma;
+        
+        var posx, posy,  posz;
+        var yonx, yony, yonz;
+        
+        
+        //Butonlar
+        var baslatBtn1 = document.getElementById("baslatekran1");
+        var baslatBtn2 = document.getElementById("baslatekran2");
+        var baslatBtn3 = document.getElementById("baslatekran3");
+        var kapatBtn = document.getElementById("kapat");
+       
+        //Videolar
+        let video = document.getElementById("video");
+        let video1 = document.getElementById("video1");
+        let video2 = document.getElementById("video2");
+
+        //Video
+        var videoTexture = new THREE.VideoTexture(video);
+        videoTexture.minFilter = THREE.LinearFilter;
+        videoTexture.magFilter = THREE.LinearFilter;
+
+        let movieMaterial = new THREE.MeshBasicMaterial({
+            map: videoTexture,
+            side: THREE.FrontSide,
+            toneMapped: false,
+        });
+
+        //Video1
+        var videoTexture1 = new THREE.VideoTexture(video1);
+        videoTexture1.minFilter = THREE.LinearFilter;
+        videoTexture1.magFilter = THREE.LinearFilter;
+
+        let movieMaterial1 = new THREE.MeshBasicMaterial({
+            map: videoTexture1,
+            side: THREE.FrontSide,
+            toneMapped: false,
+        });
+        
+        //Video2
+        var videoTexture2 = new THREE.VideoTexture(video2);
+        videoTexture2.minFilter = THREE.LinearFilter;
+        videoTexture2.magFilter = THREE.LinearFilter;
+
+        let movieMaterial2 = new THREE.MeshBasicMaterial({
+            map: videoTexture2,
+            side: THREE.FrontSide,
+            toneMapped: false,
+        });
+     
+        //info
+        var infoTexture = new THREE.TextureLoader().load("info.png");
+        let infoMaterial = new THREE.MeshBasicMaterial({map: infoTexture});
+
+        let infoGeometry = new THREE.BoxGeometry(150, 50, 3);
+        let info = new THREE.Mesh(infoGeometry,infoMaterial);
+        info.position.z = -155;
+        info.position.x = 87;
+        info.position.y = 100;
+
+        init();
+
+        function init(){
+         
+        clock = new THREE.Clock();
+        
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xffffff);
+
+        camera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 0.1, 1000 );
+        camera.position.set(0,60,270);
+        camera.lookAt(0,0,0);
+    
+        const ambient = new THREE.HemisphereLight(0xffffbb, 0x080820);
+        scene.add(ambient);
+
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(0,0,30);
+        scene.add(light);
+
+        //Skybox
+        var mSkybox1 = [];
+
+        const frontSide1 = new THREE.TextureLoader().load('Box/frontside.png');
+        const backSide1 = new THREE.TextureLoader().load('Box/backside.png');
+        const topSide1 = new THREE.TextureLoader().load('Box/topside.png');
+        const bottomSide1 = new THREE.TextureLoader().load('Box/bottomside.png');
+        const rightSide1 = new THREE.TextureLoader().load('Box/rightside.png');
+        const leftSide1 = new THREE.TextureLoader().load('Box/leftside.png');
+
+        mSkybox1.push(new THREE.MeshBasicMaterial({map: frontSide1}));
+        mSkybox1.push(new THREE.MeshBasicMaterial({map: backSide1}));
+        mSkybox1.push(new THREE.MeshBasicMaterial({map: topSide1}));
+        mSkybox1.push(new THREE.MeshBasicMaterial({map: bottomSide1}));
+        mSkybox1.push(new THREE.MeshBasicMaterial({map: rightSide1}));
+        mSkybox1.push(new THREE.MeshBasicMaterial({map: leftSide1}));
+
+        let gSkybox1 = new THREE.BoxGeometry(470,300,480);
+        let skybox1 = new THREE.Mesh(gSkybox1, mSkybox1);
+        scene.add(skybox1);
+ 
+        for(let i=0; i<6; i++) {
+            mSkybox1[i].side = THREE.BackSide;
+        }
+
+        skybox1.position.x = 0;
+        skybox1.position.y = 150;
+        skybox1.position.z = -5;
+
+        //Ekran1
+        let movieGeometry1 = new THREE.BoxGeometry(75, 40, 2);
+        let ekran1 = new THREE.Mesh(movieGeometry1,movieMaterial);
+        scene.add(ekran1);
+        ekran1.position.z = -20;
+        ekran1.position.x = -67;
+        ekran1.position.y = 35;
+        ekran1.rotation.y = Math.PI/2;
+
+        //Ekran2
+        let movieGeometry2 = new THREE.BoxGeometry(75, 40, 2);
+        let ekran2 = new THREE.Mesh(movieGeometry2,movieMaterial1);
+        scene.add(ekran2);
+        ekran2.position.z = -130;
+        ekran2.position.x = -68;
+        ekran2.position.y = 35;
+        ekran2.rotation.y = Math.PI/2;
+
+        //Ekran3
+        let movieGeometry = new THREE.BoxGeometry(150, 50, 3);
+        let ekran3 = new THREE.Mesh(movieGeometry,movieMaterial2);
+        scene.add(ekran3);
+        ekran3.position.z = -155;
+        ekran3.position.x = 87;
+        ekran3.position.y = 38;
+       
+
+        // //Sinema Alanı
+        const assetPath = 'grafik/';
+        const loader = new GLTFLoader();
+        loader.setPath(assetPath);
+        
+        loader.load('salonkapalı.glb', function(object){  
+
+                scene.add(object.scene);
+        });
+       
+        //Yurume
+        const assetPath2 = 'animation/';
+        const loader2 = new GLTFLoader();
+        loader2.setPath(assetPath2);
+
+        //sitting2
+        const assetPath4 = 'animation/';
+        const loader4 = new GLTFLoader();
+        loader4.setPath(assetPath4);
+
+        //sittostand
+        const assetPath5 = 'animation/';
+        const loader5 = new GLTFLoader();
+        loader5.setPath(assetPath5);
+
+        //sittingp
+        const assetPath6 = 'animation/';
+        const loader6 = new GLTFLoader();
+        loader6.setPath(assetPath6);
+
+        //standing
+        const assetPath7 = 'animation/';
+        const loader7 = new GLTFLoader();
+        loader7.setPath(assetPath7);
+
+        document.addEventListener('keypress', yurume, false);    
+        document.addEventListener('keyup', stop, false);
+        document.addEventListener('keydown', oturma, false);
+        document.addEventListener('keydown', kalkma, false);
+        document.addEventListener('keydown', infoadd, false);
+        document.addEventListener('keydown', inforemove, false);
+
+        //Yurume
+        loader2.load('walk.glb', function(object2){     
+            armature = object2.scene.children[0];
+            armature.position.x = -110 ;
+            armature.position.z = 180 ;
+
+        
+            let mixerYurume = new THREE.AnimationMixer(armature);
+            mixers.push(mixerYurume);
+
+            actionYurume = mixerYurume.clipAction(object2.animations[0]);
+            actions.push(actionYurume);
+            
+            scene.add(object2.scene);        
+        });
+
+        //Oturma
+        loader4.load('sitting2.glb', function(object4){
+            sitting2 = object4.scene.children[0];
+            sitting2.position.x = -110 ;
+            sitting2.position.z = 180 ;
+
+            let mixerOturma2 = new THREE.AnimationMixer(sitting2);
+            mixers.push(mixerOturma2);
+
+            actionOturma2 = mixerOturma2.clipAction(object4.animations[0]);
+            actions.push(actionOturma2);
+
+        });
+
+        //Puf oturma
+        loader6.load('sittingp.glb', function(object6){
+            sittingp = object6.scene.children[0];
+            sittingp.position.x = -110 ;
+            sittingp.position.z = 180 ;
+
+            let mixerOturma4 = new THREE.AnimationMixer(sittingp);
+            mixers.push(mixerOturma4);
+
+            actionOturma4 = mixerOturma4.clipAction(object6.animations[0]);
+            actions.push(actionOturma4);
+
+        });
+
+        //Kalkma
+        loader5.load('sittostand.glb', function(object5){
+            sittostand = object5.scene.children[0];
+            sittostand.position.x = -110;
+            sittostand.position.z = 180;
+
+            let mixerOturma3 = new THREE.AnimationMixer(sittostand);
+            mixers.push(mixerOturma3);
+
+            actionOturma3 = mixerOturma3.clipAction(object5.animations[0]);
+            actions.push(actionOturma3);
+ 
+        });
+
+        //Puf Kalkma
+        loader7.load('standing.glb', function(object7){
+            standing = object7.scene.children[0];
+            standing.position.x = -110;
+            standing.position.z = 180;
+
+            let mixerPufKalkma = new THREE.AnimationMixer(standing);
+            mixers.push(mixerPufKalkma);
+
+            actionPufKalkma = mixerPufKalkma.clipAction(object7.animations[0]);
+            actions.push(actionPufKalkma);
+ 
+        });
+
+                render=new THREE.WebGLRenderer({antialias: true});
+                render.setPixelRatio(window.devicePixelRatio);
+                render.setSize(window.innerWidth,window.innerHeight);
+                render.shadowMap.enabled=true;
+                render.xr.enabled = true;
+                document.body.appendChild(render.domElement);
+                document.body.appendChild(VRButton.createButton(render));
+
+                render.setAnimationLoop(Render);  
+    
+    
+    }
+    
+        function Render()
+                {   
+                    const dt = clock.getDelta();
+                    mixers.forEach(mixer => mixer.update(dt));
+                    videoTexture.needsUpdate = true;
+                    render.render(scene,camera);
+                }
+
+        function stop(event) {
+
+            actions[0].stop();
+            
+        }
+    
+        function yurume(event) {
+            var keyCode = event.which;
+            
+            posx = armature.position.x;
+            posy = armature.position.y;
+            posz = armature.position.z;
+
+            yonx = armature.rotation.x;
+            yony = armature.rotation.y;
+            yonz = armature.rotation.z;
+
+            camera.position.x = posx;
+            camera.position.y = posy+20;
+            camera.position.z = posz+20;
+    
+            //W
+            if(keyCode == 119 && actions !== undefined){
+
+                scene.add(armature);
+                scene.remove(sitting2); 
+                scene.remove(sittostand);
+                scene.remove(sittingp);  
+                scene.remove(standing);  
+       
+                armature.position.z -= 1;
+
+                                                    
+            }   
+                
+            //A
+            if(keyCode == 97 && actions !== undefined) {
+            
+                scene.add(armature);
+                scene.remove(sitting2); 
+                scene.remove(sittostand); 
+                scene.remove(sittingp); 
+                scene.remove(standing); 
+                
+                armature.position.x -= 1; 
+            
+            }
+
+            //S
+            if(keyCode == 115 && actions !== undefined){
+
+                scene.add(armature); 
+                scene.remove(sitting2); 
+                scene.remove(sittostand);
+                scene.remove(sittingp);
+                scene.remove(standing);
+            
+                armature.position.z += 1;             
+
+            }
+
+            //D   
+            if(keyCode == 100 && actions !== undefined){
+
+                scene.add(armature);
+                scene.remove(sitting2);  
+                scene.remove(sittostand);
+                scene.remove(sittingp);  
+                scene.remove(standing);  
+
+                armature.position.x += 1;
+                                                    
+            }
+
+            //E
+            if(keyCode == 101) {
+
+                armature.rotation.z += Math.PI/6;
+            } 
+            //Q
+            if(keyCode == 113) {
+
+                armature.rotation.z -= Math.PI/6;
+
+            }
+
+            //F
+            if(keyCode == 102) {
+
+                armature.position.y += 1;
+
+            }
+            //G
+            if(keyCode == 103) {
+
+                armature.position.y -= 1;
+
+            }
+
+        }  
+ 
+    
+        function oturma(event) {
+            var keyCode = event.which;
+
+            //Enter (sitting2)
+            if(keyCode == 13 ) {
+
+                scene.add(sitting2);
+                scene.remove(armature);
+                scene.remove(sittostand);
+                scene.remove(sittingp);
+                scene.remove(standing);
+
+                if(baslatBtn1.style.display == "none"){
+                    baslatBtn1.style.display = "block";
+                } 
+
+                if(baslatBtn2.style.display == "none"){
+                    baslatBtn2.style.display = "block";
+                }  
+
+                baslatBtn1.onclick=function(){
+
+                    baslatBtn1.style.display = "none";
+                    baslatBtn2.style.display = "none";
+                    baslatBtn3.style.display = "none";
+                    kapat.style.display = "block";
+                        
+                    video.play();
+                
+                }
+                
+                baslatBtn2.onclick=function(){
+                
+                    baslatBtn1.style.display = "none";
+                    baslatBtn2.style.display = "none";
+                    baslatBtn3.style.display = "none";
+                    kapat.style.display = "block";
+
+                    video1.play();
+
+                }
+
+                }
+
+                kapatBtn.onclick=function(){
+
+                    kapat.style.display = "none";
+                    video.pause();
+                    video1.pause();
+                }
+
+                sitting2.position.x = posx;
+                sitting2.position.y = posy;
+                sitting2.position.z = posz;
+
+                sitting2.rotation.x = yonx;
+                sitting2.rotation.y = yony;
+                sitting2.rotation.z = yonz;
+
+                actions[1].play();
+                actions[1].loop = THREE.LoopRepeat;
+
+            //Space (sittingp)
+            if(keyCode == 32 ) {
+
+                if(baslatBtn3.style.display == "none"){
+                    baslatBtn3.style.display = "block";
+                } 
+
+                baslatBtn3.onclick=function(){
+
+                    baslatBtn1.style.display = "none";
+                    baslatBtn2.style.display = "none";
+                    baslatBtn3.style.display = "none";
+
+                    kapat.style.display = "block";
+
+                    video2.play();
+
+                }
+
+                kapatBtn.onclick=function(){
+
+                    kapat.style.display = "none";
+                    video2.pause();
+                }
+
+                scene.add(sittingp);
+                scene.remove(sitting2);
+                scene.remove(armature);  
+                scene.remove(sittostand); 
+                scene.remove(standing);
+
+
+                sittingp.position.x = posx;
+                sittingp.position.y = posy;
+                sittingp.position.z = posz;  
+
+                sittingp.rotation.x = yonx;
+                sittingp.rotation.y = yony;
+                sittingp.rotation.z = yonz;
+
+                actions[2].play();
+                actions[2].loop = THREE.LoopOnce;
+                actions[2].clampWhenFinished = true;
+                actions[2].reset();
+
+            }
+                
+        }
+
+        function kalkma(event) {
+            var keyCode = event.which;
+
+            //Shift (sittostand)
+            if(keyCode == 16 ) {
+
+                
+                scene.remove(sitting2);  
+                scene.remove(armature);   
+                scene.remove(sittingp);    
+                scene.remove(standing);
+                scene.add(sittostand);
+                
+
+                baslatBtn1.style.display = "none";
+                baslatBtn2.style.display = "none";
+                baslatBtn3.style.display = "none";
+                
+
+                sittostand.position.x = posx;
+                sittostand.position.y = posy;
+                sittostand.position.z = posz;  
+
+                sittostand.rotation.x = yonx;
+                sittostand.rotation.y = yony;
+                sittostand.rotation.z = yonz;
+                
+                actions[3].play();
+                actions[3].loop = THREE.LoopOnce;
+                actions[3].clampWhenFinished = true;
+                actions[3].reset();
+
+            }
+
+            //B (standing)
+            if(keyCode == 66 ) {
+
+                scene.add(standing);
+                scene.remove(sitting2);
+                scene.remove(armature);  
+                scene.remove(sittingp);   
+                scene.remove(sittostand);
+                
+
+                baslatBtn1.style.display = "none";
+                baslatBtn2.style.display = "none";
+                baslatBtn3.style.display = "none";
+                
+
+                standing.position.x = posx;
+                standing.position.y = posy;
+                standing.position.z = posz;  
+
+                standing.rotation.x = yonx;
+                standing.rotation.y = yony;
+                standing.rotation.z = yonz;
+                
+                actions[4].play();
+                actions[4].loop = THREE.LoopOnce;
+                actions[4].clampWhenFinished = true;
+                actions[4].reset();
+
+            }
+
+        }
+
+        function infoadd (event) {
+            var keyCode = event.which;
+            if(keyCode == 53){
+                scene.add(info);
+            }
+
+        }
+
+        function inforemove (event) {
+            var keyCode = event.which;
+            if(keyCode == 54){
+                scene.remove(info);
+            }
+
+        }
+   
+        // console.log(actions[0]); //armature
+        // console.log(actions[1]); //sitting2
+        // console.log(actions[2]); //sittingp
+        // console.log(actions[3]); //sittostand
+        // console.log(actions[4]); //standing
+    </script>
+    
+</body>
+</html>
